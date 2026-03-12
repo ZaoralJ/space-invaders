@@ -420,6 +420,7 @@ function initialState() {
     phase: 'start', // start | playing | dead | levelup | gameover | win
     deadTimer: 0,
     levelupTimer: 0,
+    winTimer: 0,
     ufo: null,
     ufoNextIn: UFO_INTERVAL_MIN + Math.random() * (UFO_INTERVAL_MAX - UFO_INTERVAL_MIN),
     ufoScore: null,
@@ -623,6 +624,7 @@ export default function SpaceInvaders() {
   const keysRef = useRef({});
   const rafRef = useRef(null);
   const explosionsRef = useRef([]);
+  const winParticlesRef = useRef([]);
   const soundRef = useRef(null);
   const [muted, setMuted] = useState(false);
   const [sfxMuted, setSfxMuted] = useState(false);
@@ -652,6 +654,7 @@ export default function SpaceInvaders() {
       hiScore: keepHiScore ? Math.max(prev.hiScore, prev.score) : 0,
     };
     explosionsRef.current = [];
+    winParticlesRef.current = [];
   }, []);
 
   useEffect(() => {
@@ -902,7 +905,44 @@ export default function SpaceInvaders() {
           s.ufoNextIn = UFO_INTERVAL_MIN + Math.random() * (UFO_INTERVAL_MAX - UFO_INTERVAL_MIN);
           s.phase = 'playing';
         }
-      } else if (s.phase === 'gameover' || s.phase === 'win') {
+      } else if (s.phase === 'win') {
+        s.winTimer++;
+        // Spawn a new firework burst every 35 frames
+        if (s.winTimer % 35 === 1) {
+          const bx = 80 + Math.random() * (CANVAS_W - 160);
+          const by = 60 + Math.random() * (CANVAS_H * 0.55);
+          const hue = Math.random() * 360;
+          for (let i = 0; i < 28; i++) {
+            const angle = (i / 28) * Math.PI * 2 + Math.random() * 0.3;
+            const speed = 1.5 + Math.random() * 4;
+            winParticlesRef.current.push({
+              x: bx, y: by,
+              vx: Math.cos(angle) * speed,
+              vy: Math.sin(angle) * speed - 1,
+              life: 1,
+              decay: 0.012 + Math.random() * 0.018,
+              hue: (hue + Math.random() * 40) % 360,
+              size: 2 + Math.random() * 3,
+            });
+          }
+        }
+        // Tick particles
+        winParticlesRef.current = winParticlesRef.current.filter(p => {
+          p.x += p.vx; p.y += p.vy;
+          p.vy += 0.07; // gravity
+          p.vx *= 0.97;
+          p.life -= p.decay;
+          return p.life > 0;
+        });
+        if (keys['Space'] || keys['Enter']) {
+          s.hiScore = Math.max(s.hiScore, s.score);
+          snd?.stopMusic();
+          winParticlesRef.current = [];
+          reset(true);
+          stateRef.current.hiScore = s.hiScore;
+          stateRef.current.phase = 'start';
+        }
+      } else if (s.phase === 'gameover') {
         if (keys['Space'] || keys['Enter'] || autoPlayRef.current) {
           s.hiScore = Math.max(s.hiScore, s.score);
           snd?.stopMusic();
@@ -1083,19 +1123,40 @@ export default function SpaceInvaders() {
       }
 
       if (s.phase === 'win') {
-        ctx.fillStyle = 'rgba(0,0,20,0.7)';
+        // Firework particles (drawn before the overlay so text stays on top)
+        for (const p of winParticlesRef.current) {
+          ctx.globalAlpha = p.life;
+          ctx.fillStyle = `hsl(${p.hue},100%,65%)`;
+          ctx.fillRect(p.x - p.size / 2, p.y - p.size / 2, p.size, p.size);
+        }
+        ctx.globalAlpha = 1;
+
+        // Semi-transparent overlay for text legibility
+        ctx.fillStyle = 'rgba(0,0,20,0.55)';
         ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
-        ctx.fillStyle = '#ffff00';
-        ctx.font = 'bold 48px monospace';
+
+        // Pulsing rainbow "YOU WIN!" title
+        const pulse = 0.85 + 0.15 * Math.sin(Date.now() / 200);
+        ctx.save();
+        ctx.translate(CANVAS_W / 2, CANVAS_H / 2 - 40);
+        ctx.scale(pulse, pulse);
+        ctx.font = 'bold 56px monospace';
         ctx.textAlign = 'center';
-        ctx.fillText('YOU WIN!', CANVAS_W / 2, CANVAS_H / 2 - 30);
+        ctx.fillStyle = `hsl(${(Date.now() / 8) % 360},100%,65%)`;
+        ctx.fillText('YOU WIN!', 0, 0);
+        ctx.restore();
+
         ctx.fillStyle = '#ffffff';
         ctx.font = '22px monospace';
+        ctx.textAlign = 'center';
         ctx.fillText(`SCORE: ${s.score}`, CANVAS_W / 2, CANVAS_H / 2 + 20);
+        ctx.fillStyle = '#ffff00';
+        ctx.font = '14px monospace';
+        ctx.fillText(`ALL 10 LEVELS CLEARED`, CANVAS_W / 2, CANVAS_H / 2 + 48);
         ctx.fillStyle = '#aaaaaa';
         ctx.font = '16px monospace';
         const blink = Math.floor(Date.now() / 500) % 2 === 0;
-        if (blink) ctx.fillText('PRESS SPACE TO PLAY AGAIN', CANVAS_W / 2, CANVAS_H / 2 + 60);
+        if (blink) ctx.fillText('PRESS SPACE TO PLAY AGAIN', CANVAS_W / 2, CANVAS_H / 2 + 76);
         ctx.textAlign = 'left';
       }
 
