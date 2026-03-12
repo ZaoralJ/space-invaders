@@ -292,7 +292,7 @@ function createSoundEngine() {
     }
   }
 
-  // ---- Mute ----
+  // ---- Mute (everything) ----
   let muted = false;
   function setMuted(val) {
     muted = val;
@@ -312,7 +312,16 @@ function createSoundEngine() {
   }
   function isMuted() { return muted; }
 
-  const guard = fn => (...args) => { if (!muted) fn(...args); };
+  // ---- SFX-only mute (S key) ----
+  let sfxMuted = false;
+  function setSfxMuted(val) {
+    sfxMuted = val;
+    if (val) stopUFO();
+  }
+  function isSfxMuted() { return sfxMuted; }
+
+  const guard    = fn => (...args) => { if (!muted && !sfxMuted) fn(...args); };
+  const guardMusic = fn => (...args) => { if (!muted) fn(...args); };
 
   return {
     playShoot: guard(playShoot),
@@ -324,10 +333,12 @@ function createSoundEngine() {
     stopUFO,
     playGameOver: guard(playGameOver),
     playWin: guard(playWin),
-    startMusic: guard(startMusic),
+    startMusic: guardMusic(startMusic),
     stopMusic,
     setMuted,
     isMuted,
+    setSfxMuted,
+    isSfxMuted,
   };
 }
 
@@ -567,6 +578,7 @@ export default function SpaceInvaders() {
   const explosionsRef = useRef([]);
   const soundRef = useRef(null);
   const [muted, setMuted] = useState(false);
+  const [sfxMuted, setSfxMuted] = useState(false);
   const [godMode, setGodMode] = useState(false);
   const godModeRef = useRef(false);
   const cheatBufferRef = useRef('');
@@ -601,6 +613,13 @@ export default function SpaceInvaders() {
       }
       // Boot AudioContext on first keydown (browser autoplay policy)
       getSound();
+      // S key — toggle SFX mute
+      if (e.code === 'KeyS') {
+        const snd = getSound();
+        const next = !snd.isSfxMuted();
+        snd.setSfxMuted(next);
+        setSfxMuted(next);
+      }
       // IDDQD cheat code detection
       if (e.key.length === 1) {
         cheatBufferRef.current = (cheatBufferRef.current + e.key.toLowerCase()).slice(-5);
@@ -950,6 +969,13 @@ export default function SpaceInvaders() {
         ctx.fillText('IDDQD', CANVAS_W - 60, CANVAS_H - 42);
       }
 
+      // SFX-muted indicator
+      if (soundRef.current?.isSfxMuted()) {
+        ctx.font = '11px monospace';
+        ctx.fillStyle = '#555';
+        ctx.fillText('SFX OFF', CANVAS_W - 62, CANVAS_H - 28);
+      }
+
       // Explosions
       for (const e of explosionsRef.current) drawExplosion(ctx, e.x, e.y, e.timer);
 
@@ -1057,7 +1083,7 @@ export default function SpaceInvaders() {
       />
       <div style={{ display: 'flex', alignItems: 'center', gap: 20, marginTop: 12 }}>
         <p style={{ color: '#555', fontSize: 13, margin: 0 }}>
-          Click the canvas then use ← → to move, SPACE to shoot
+          Click the canvas then use ← → to move, SPACE to shoot, <span style={{ color: sfxMuted ? '#888' : '#555' }}>S = SFX {sfxMuted ? 'off' : 'on'}</span>
         </p>
         <button
           onClick={toggleMute}
