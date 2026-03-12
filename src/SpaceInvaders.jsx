@@ -570,6 +570,53 @@ function collidesWithBarrier(barrier, bx, by, bw2, bh) {
   return hit;
 }
 
+// ---------------------------------------------------------------------------
+// Auto-play AI — returns synthetic key state for the current frame
+// ---------------------------------------------------------------------------
+function computeAutoInputs(s) {
+  const alive = s.aliens.filter(a => a.alive);
+  const playerCX = s.playerX + PLAYER_W / 2;
+
+  // 1. Dodge: find bullets that will hit the player column in the next ~80px
+  const dangerous = s.alienBullets.filter(b =>
+    Math.abs(b.x - playerCX) < PLAYER_W + 8 && b.y > PLAYER_Y - 160
+  );
+  if (dangerous.length > 0) {
+    // Evade toward the side with more space
+    const threat = dangerous.reduce((a, b) => b.y > a.y ? b : a);
+    const evadeRight = threat.x < playerCX && s.playerX + PLAYER_W < CANVAS_W - 10;
+    const evadeLeft  = threat.x >= playerCX && s.playerX > 10;
+    // Also shoot while evading if already aimed at something
+    const shoot = s.alienBullets.length > 0;
+    return { ArrowLeft: evadeLeft, ArrowRight: evadeRight, Space: shoot };
+  }
+
+  // 2. Pick target: highest-scoring alien in the bottom-most occupied row
+  if (alive.length === 0) return { ArrowLeft: false, ArrowRight: false, Space: false };
+  const maxY = Math.max(...alive.map(a => a.y));
+  const bottomRow = alive.filter(a => a.y >= maxY - 4);
+  // Among bottom row prefer high-value (squid=30pts) first, else closest
+  const target = bottomRow.reduce((best, a) => {
+    if (ALIEN_SCORES[a.type] > ALIEN_SCORES[best.type]) return a;
+    if (ALIEN_SCORES[a.type] === ALIEN_SCORES[best.type]) {
+      return Math.abs((a.x + ALIEN_W / 2) - playerCX) <
+             Math.abs((best.x + ALIEN_W / 2) - playerCX) ? a : best;
+    }
+    return best;
+  });
+
+  const targetCX = target.x + ALIEN_W / 2;
+  const diff = targetCX - playerCX;
+  const tolerance = 4;
+  const aligned = Math.abs(diff) <= ALIEN_W * 0.8;
+
+  return {
+    ArrowLeft:  diff < -tolerance,
+    ArrowRight: diff >  tolerance,
+    Space: aligned,
+  };
+}
+
 export default function SpaceInvaders() {
   const canvasRef = useRef(null);
   const stateRef = useRef(initialState());
@@ -580,7 +627,9 @@ export default function SpaceInvaders() {
   const [muted, setMuted] = useState(false);
   const [sfxMuted, setSfxMuted] = useState(false);
   const [godMode, setGodMode] = useState(false);
+  const [autoPlay, setAutoPlay] = useState(false);
   const godModeRef = useRef(false);
+  const autoPlayRef = useRef(false);
   const cheatBufferRef = useRef('');
 
   // Lazily create sound engine on first user interaction
@@ -613,6 +662,11 @@ export default function SpaceInvaders() {
       }
       // Boot AudioContext on first keydown (browser autoplay policy)
       getSound();
+      // A key — toggle auto-play
+      if (e.code === 'KeyA') {
+        autoPlayRef.current = !autoPlayRef.current;
+        setAutoPlay(autoPlayRef.current);
+      }
       // S key — toggle SFX mute
       if (e.code === 'KeyS') {
         const snd = getSound();
@@ -652,9 +706,13 @@ export default function SpaceInvaders() {
 
       const snd = soundRef.current;
 
+      // Merge AI inputs when auto-play is on
+      const ai = autoPlayRef.current ? computeAutoInputs(s) : null;
+      const input = key => ai ? ai[key] : keys[key];
+
       // --- UPDATE ---
       if (s.phase === 'start') {
-        if (keys['Space'] || keys['Enter']) {
+        if (keys['Space'] || keys['Enter'] || autoPlayRef.current) {
           s.phase = 'playing';
           snd?.startMusic();
         }
@@ -662,12 +720,12 @@ export default function SpaceInvaders() {
         s.frame++;
 
         // Player movement
-        if (keys['ArrowLeft']) s.playerX = Math.max(0, s.playerX - PLAYER_SPEED);
-        if (keys['ArrowRight']) s.playerX = Math.min(CANVAS_W - PLAYER_W, s.playerX + PLAYER_SPEED);
+        if (input('ArrowLeft'))  s.playerX = Math.max(0, s.playerX - PLAYER_SPEED);
+        if (input('ArrowRight')) s.playerX = Math.min(CANVAS_W - PLAYER_W, s.playerX + PLAYER_SPEED);
 
         // Shooting
         if (s.shootCooldown > 0) s.shootCooldown--;
-        if (keys['Space'] && s.shootCooldown === 0 && s.playerBullets.length < 2) {
+        if (input('Space') && s.shootCooldown === 0 && s.playerBullets.length < 2) {
           s.playerBullets.push({ x: s.playerX + PLAYER_W / 2, y: PLAYER_Y });
           s.shootCooldown = 20;
           snd?.playShoot();
@@ -845,7 +903,7 @@ export default function SpaceInvaders() {
           s.phase = 'playing';
         }
       } else if (s.phase === 'gameover' || s.phase === 'win') {
-        if (keys['Space'] || keys['Enter']) {
+        if (keys['Space'] || keys['Enter'] || autoPlayRef.current) {
           s.hiScore = Math.max(s.hiScore, s.score);
           snd?.stopMusic();
           reset(true);
@@ -960,6 +1018,13 @@ export default function SpaceInvaders() {
           ctx.restore();
         }
         drawPlayer(ctx, s.playerX, s.phase !== 'dead' || s.deadTimer > 90, s.flashTimer);
+      }
+
+      // Auto-play HUD tag
+      if (autoPlayRef.current) {
+        ctx.font = 'bold 11px monospace';
+        ctx.fillStyle = `hsl(${(Date.now() / 20) % 360}, 100%, 65%)`;
+        ctx.fillText('AUTO', CANVAS_W - 48, CANVAS_H - 56);
       }
 
       // God-mode HUD tag
