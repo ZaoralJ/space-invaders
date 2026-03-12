@@ -349,7 +349,7 @@ const PLAYER_H = 24;
 const PLAYER_SPEED = 5;
 const PLAYER_Y = CANVAS_H - 60;
 const BULLET_SPEED = 10;
-const ALIEN_BULLET_SPEED = 4;
+const ALIEN_BULLET_SPEED = 2.5;
 const ALIEN_COLS = 11;
 const ALIEN_ROWS = 5;
 const ALIEN_W = 36;
@@ -770,9 +770,9 @@ export default function SpaceInvaders() {
         // Alien movement — speed scales with level + kills remaining
         s.alienFrameTimer++;
         const aliveCount = s.aliens.filter(a => a.alive).length;
-        const levelMult = 1 + (s.level - 1) * 0.3;   // 1.0 → 3.7 across 10 levels
-        const killMult  = 1 + (ALIEN_COLS * ALIEN_ROWS - aliveCount) / (ALIEN_COLS * ALIEN_ROWS) * 3;
-        const moveInterval = Math.max(2, Math.floor(30 / (levelMult * killMult)));
+        const levelMult = 1 + (s.level - 1) * 0.18;  // 1.0 → 2.62 across 10 levels
+        const killMult  = 1 + (ALIEN_COLS * ALIEN_ROWS - aliveCount) / (ALIEN_COLS * ALIEN_ROWS) * 2;
+        const moveInterval = Math.max(3, Math.floor(50 / (levelMult * killMult)));
         if (s.alienFrameTimer >= moveInterval) {
           s.alienFrameTimer = 0;
           s.alienFrame++;
@@ -818,7 +818,7 @@ export default function SpaceInvaders() {
         }
 
         // Alien shooting — rate increases each level (45 → 18 frames)
-        const shootInterval = Math.max(18, 45 - (s.level - 1) * 3);
+        const shootInterval = Math.max(30, 75 - (s.level - 1) * 5);
         if (s.frame % shootInterval === 0) {
           const alive = s.aliens.filter(a => a.alive);
           if (alive.length > 0) {
