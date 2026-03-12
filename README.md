@@ -1,6 +1,6 @@
 # Space Invaders
 
-A faithful recreation of the classic 1978 arcade game built with React and Vite, rendered on an HTML5 canvas with procedurally synthesized sound effects.
+A faithful recreation of the classic 1978 arcade game built with React and Vite, rendered on an HTML5 canvas with procedurally synthesized audio — no assets, no dependencies beyond React.
 
 ## Play
 
@@ -9,7 +9,9 @@ npm install
 npm run dev
 ```
 
-Then open http://localhost:5173 in your browser.
+Open http://localhost:5173, click the canvas to focus it, then use the controls below.
+
+**Hosted:** https://zaorali.github.io/space-invaders/
 
 ## Controls
 
@@ -18,32 +20,45 @@ Then open http://localhost:5173 in your browser.
 | `←` `→` | Move left / right |
 | `Space` | Shoot |
 | `Space` / `Enter` | Start / restart game |
-
-Click the canvas first to focus it.
+| `A` | Toggle auto-play (AI takes over) |
+| `S` | Toggle SFX on / off (music keeps playing) |
+| `iddqd` | Type during play to toggle god mode |
 
 ## Features
 
-- **55 aliens** across 5 rows and 3 types (squid, crab, octopus) with authentic 2-frame pixel-art animations
-- **Destructible barriers** — each block erodes individually from both player and alien fire
-- **UFO** flies across the top at random intervals for bonus points (50–300)
-- **10 levels** — alien speed and shoot rate increase each level; the grid starts slightly lower every wave
-- **Procedural audio** — all sound effects synthesized at runtime via the Web Audio API (no audio files)
-  - Player shoot, alien kill, UFO warble drone, player hit, alien march beat, game over, win fanfare
-- **Mute button** below the canvas
-- **IDDQD cheat code** — type `iddqd` during gameplay to toggle invincibility (gold aura + HUD indicator)
-- Hi-score persisted across rounds within the session
+### Gameplay
+- **55 aliens** in a 5×11 grid, three types — squid (30 pts), crab (20 pts), octopus (10 pts)
+- Authentic **2-frame pixel-art sprite animations** for every alien type
+- **4 destructible barriers** — each 8×6 block erodes individually from both player and alien fire
+- **UFO** flies across the top at random intervals, worth 50–300 bonus points
+- **Score & hi-score** tracked within the session; lives displayed as mini ship icons
 
-## Level Progression
+### 10-Level Progression
 
-| Level | Base speed | Shoot interval |
-|-------|-----------|----------------|
-| 1     | ×1.0      | 45 frames      |
-| 3     | ×1.6      | 39 frames      |
-| 5     | ×2.2      | 33 frames      |
-| 7     | ×2.8      | 27 frames      |
-| 10    | ×3.7      | 18 frames      |
+| Level | Base speed | Shoot interval | Difficulty |
+|-------|------------|----------------|------------|
+| 1–2   | ×1.0       | 75 frames      | Easy       |
+| 3–4   | ×1.36      | 65 frames      | Easy       |
+| 5–6   | ×1.72      | 55 frames      | Normal     |
+| 7–8   | ×2.08      | 45 frames      | Hard       |
+| 9–10  | ×2.44+     | 35–30 frames   | Insane     |
 
-Speed also ramps up mid-level as aliens are killed, so the last few survivors at level 10 are extremely fast.
+Speed also ramps up mid-wave as aliens are killed. A level-up transition screen shows the incoming difficulty before the next wave spawns. Clearing level 10 triggers the win screen.
+
+### Audio (all procedurally synthesized — no audio files)
+- **Ambient space music** — deep bass drone, Am pentatonic chord pad with slow LFO drift, high-frequency shimmer, and a melodic arpeggio with echo/delay feedback
+- **Sound effects** — player shoot, alien explosion, UFO warble drone, player hit, alien march beat, game over, win fanfare
+- Music fades in when the game starts and fades out on game over / win
+- **Mute button** silences everything; **`S` key** mutes SFX only, leaving music playing
+
+### Extras
+- **Auto-play mode** (`A`) — AI plays the game automatically:
+  - Dodges incoming bullets by evading toward the open side
+  - Targets the lowest alien row, prioritising high-value squids
+  - Shoots when aligned within the target's width
+  - Auto-starts and auto-restarts — leave it running as a screensaver
+- **IDDQD god mode** — type `iddqd` at any time to toggle invincibility; alien bullets pass through the player, golden aura rendered around the ship
+- Rainbow **AUTO** / gold **IDDQD** / grey **SFX OFF** HUD tags in the canvas corner
 
 ## Tech Stack
 
@@ -51,3 +66,4 @@ Speed also ramps up mid-level as aliens are killed, so the last few survivors at
 - [Vite 8](https://vite.dev/)
 - HTML5 Canvas API
 - Web Audio API
+- GitHub Actions + GitHub Pages (CI/CD)
