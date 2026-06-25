@@ -120,15 +120,21 @@ Cross-link related terms in each entry.
 
 ### Step 7 — Emit the document
 
-Render the glossary using `reference/output-template.md`:
+Render the glossary using `reference/output-template.md`. The template encodes
+the full presentable format — read it before writing anything. Key points:
 
-- Header block (title, source repo, generation date, scope).
-- "How to read this" note + legend.
-- One `##` section per bounded context, with alphabetical `###` term entries.
-- A final "Open questions / ambiguities" section listing terms that need human
-  confirmation.
+- **Output path:** `docs/ubiquitous-language.md` (not the repo root).
+- **Header:** metadata table (Source, Generated, Bounded context).
+- **Marker legend table** — 📖 🏷️ ↔️ 📍 — replaces verbose bold labels.
+- **Category `##` sections** (3–5 groups reflecting domain structure), each
+  containing `<details>` collapsible cards — one per term. No `###` headings.
+- **Inside each card:** markers on their own lines; 📍 references on a single
+  dot-separated line; `<kbd>` tags for keyboard shortcuts/cheat codes; inline
+  tables for enumerable value sets (phases, sub-types, control variants).
+- **Emoji** on creature/effect terms where they aid scannability.
+- A final "Open questions" section.
 
-Write to the agreed output path with the `write` tool.
+Write to `docs/ubiquitous-language.md` with the `write` tool.
 
 ### Step 8 — Verify
 
