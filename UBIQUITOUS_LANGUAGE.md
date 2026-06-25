@@ -1,465 +1,355 @@
 # Ubiquitous Language — Space Invaders
 
-> Domain glossary generated from source code. Each term is grounded in code
-> references. Definitions describe observed behavior; clauses marked
-> `(inferred)` are plausible but not fully provable from code.
+> Domain glossary grounded in source code. `(inferred)` marks interpretations not fully provable from code alone.
 
-- **Source:** `/Users/dkprabha/AIAssistedProjects/space-invaders/space-invaders`
-- **Generated:** 2026-06-25
-- **Scope:** whole repo (domain logic lives in `src/`)
-- **Bounded contexts covered:** Space Invaders (single, flat codebase)
+| | |
+|---|---|
+| **Source** | `src/` |
+| **Generated** | 2026-06-25 |
+| **Bounded context** | Space Invaders (single, flat codebase) |
+
+---
 
 ## How to read this
 
-- **Definition** — what the concept means, based on code.
-- **Code references** — where the term is defined and used (`file:line`).
-- **Synonyms / aliases** — other names for the same concept in the codebase.
-- **Related terms** — linked domain concepts (contains, references, state-of).
-- `(inferred)` — interpretation not fully provable from code; confirm with a
-  domain expert.
+| Marker | Meaning |
+|--------|---------|
+| 📖 | Definition |
+| 🏷️ | Synonyms / aliases |
+| ↔️ | Related terms |
+| 📍 | Code references |
 
 ---
 
-## Space Invaders
-
-The whole game: the player ship defends against a descending alien formation,
-sheltering behind erodible barriers, scoring points by destroying aliens and a
-bonus UFO, across ten increasingly difficult levels.
-
-### Alien
+## Entities
 
-**Definition.** An invader in the descending formation. Each alien has a
-`type` (0, 1, or 2), grid `col`/`row`, screen `x`/`y`, an `alive` flag, and an
-animation `frame`. The formation is a 5×11 grid (55 aliens) that marches
-horizontally, drops down and reverses at the screen edge, and speeds up as
-aliens are killed. Destroying one awards points by type.
+<details>
+<summary><strong>Alien</strong> — an invader in the descending formation</summary>
 
-**Code references.**
-- `src/gameLogic.js:26` — alien object shape created in `spawnAliens`
-- `src/constants.js:14` — `ALIEN_COLS = 11`; `src/constants.js:15` — `ALIEN_ROWS = 5`
-- `src/gameLogic.js:25` — row→type rule: `r === 0 ? 0 : r <= 2 ? 1 : 2`
-- `src/SpaceInvaders.jsx:264` — score awarded on kill via `ALIEN_SCORES[alien.type]`
+📖 Each alien has a `type` (0, 1, or 2), grid `col`/`row`, screen `x`/`y`, an `alive` flag, and an animation `frame`. The formation is a 5×11 grid (55 aliens) that marches horizontally, drops down and reverses at the screen edge, and speeds up as aliens are killed. Destroying one awards points by type.
 
-**Synonyms / aliases.** "invader"; rendered per-type as [Squid](#squid),
-[Crab](#crab), [Octopus](#octopus).
+🏷️ "invader"; rendered per-type as [Squid](#squid), [Crab](#crab), [Octopus](#octopus)
 
-**Related terms.** Part of the [Alien Formation March](#alien-formation-march);
-fires [Alien Bullet](#alien-bullet); collides with [Barrier](#barrier) and
-[Player Ship](#player-ship); types are [Squid](#squid), [Crab](#crab),
-[Octopus](#octopus).
+↔️ Part of [Alien Formation March](#alien-formation-march); fires [Alien Bullet](#alien-bullet); collides with [Barrier](#barrier) and [Player Ship](#player-ship)
 
-### Alien Bullet
+📍 `src/gameLogic.js:26` · `src/constants.js:14-15` · `src/gameLogic.js:25` · `src/SpaceInvaders.jsx:264`
 
-**Definition.** A projectile fired downward by an alien at the bottom of its
-column. It travels at `ALIEN_BULLET_SPEED`, is rendered with a zigzag shape,
-erodes [Barrier](#barrier) cells it hits, and ends a [Life](#life) (or kills the
-player) on contact — unless [God Mode](#god-mode-iddqd) or post-respawn flash
-invulnerability is active.
+</details>
 
-**Code references.**
-- `src/constants.js:13` — `ALIEN_BULLET_SPEED = 2.5`
-- `src/gameLogic.js:41` — `alienBullets: []` in game state
-- `src/SpaceInvaders.jsx:116` — "Zigzag alien bullet" rendering
-- `src/SpaceInvaders.jsx:351` — alien bullet travel & collisions
-- `src/SpaceInvaders.jsx:360` — invulnerability check (god mode / flash)
+<details>
+<summary><strong>Squid</strong> 🦑 — top-row alien, highest value (30 pts)</summary>
 
-**Synonyms / aliases.** None observed.
+📖 `type === 0`, occupying row 0 of the formation. Worth **30 points** — the highest per-alien value, prioritised by the [Auto-play AI](#auto-play-ai). Rendered in pink (`#ff4edd`).
 
-**Related terms.** Fired by [Alien](#alien); damages [Barrier](#barrier) and
-[Player Ship](#player-ship); negated by [God Mode](#god-mode-iddqd).
+🏷️ "type 0", "30-point alien"
 
-### Alien Formation March
+↔️ A kind of [Alien](#alien); peers [Crab](#crab), [Octopus](#octopus)
 
-**Definition.** The collective horizontal movement of the live alien
-formation. The formation moves in `alienDir` (1 = right, −1 = left), reverses
-direction and descends `ALIEN_DROP` pixels on reaching a screen edge, and its
-step interval shortens as the [Level](#level) rises and as more aliens are
-killed (the classic accelerating march). Each march step plays a 4-note beat.
+📍 `src/constants.js:28-30` · `src/SpaceInvaders.jsx:36` · `src/gameLogic.js:108`
 
-**Code references.**
-- `src/gameLogic.js:44` — `alienDir: 1` (march direction)
-- `src/constants.js:20` — `ALIEN_DROP = 20` (descent per edge bounce)
-- `src/SpaceInvaders.jsx:287` — march/movement loop with level & kill multipliers
-- `src/SpaceInvaders.jsx:316` — direction flip on edge
-- `src/audio.js:97` — `playMarch`; `src/audio.js:8` — `MARCH_FREQS = [160,130,100,80]`
+</details>
 
-**Synonyms / aliases.** "march", "alien movement".
+<details>
+<summary><strong>Crab</strong> 🦀 — middle-row alien (20 pts)</summary>
 
-**Related terms.** Composed of [Alien](#alien)s; drives toward
-[Game Over](#game-phase) when the lowest alien reaches the player line; paced by
-[Level](#level).
+📖 `type === 1`, occupying rows 1–2 of the formation. Worth **20 points**. Rendered in cyan (`#44d4ff`).
 
-### Auto-play AI
+🏷️ "type 1", "20-point alien"
 
-**Definition.** An AI mode (toggled with the `A` key) that generates synthetic
-player inputs each frame: it dodges incoming alien bullets by evading toward the
-open side, targets the lowest-row alien (preferring high-value
-[Squid](#squid)s), and shoots when horizontally aligned with the target. It also
-auto-starts and auto-restarts, functioning as a screensaver.
+↔️ A kind of [Alien](#alien); peers [Squid](#squid), [Octopus](#octopus)
 
-**Code references.**
-- `src/gameLogic.js:86` — `computeAutoInputs(s)` definition
-- `src/gameLogic.js:90` — dodge/evade logic; `src/gameLogic.js:104` — target selection
-- `src/SpaceInvaders.jsx:183` — `KeyA` toggles auto-play
-- `src/SpaceInvaders.jsx:580` — on-screen "AUTO" tag
+📍 `src/constants.js:28-30` · `src/SpaceInvaders.jsx:51` · `src/SpaceInvaders.jsx:523`
 
-**Synonyms / aliases.** "AUTO" (HUD tag), `autoPlayRef`, `computeAutoInputs`.
+</details>
 
-**Related terms.** Controls the [Player Ship](#player-ship); targets
-[Alien](#alien)s.
+<details>
+<summary><strong>Octopus</strong> 🐙 — bottom-row alien, lowest value (10 pts)</summary>
 
-### Barrier
+📖 `type === 2`, occupying rows 3–4 of the formation. Worth **10 points**. Rendered in green (`#66ff66`).
 
-**Definition.** A defensive bunker positioned above the player. Each of the four
-barriers is an 8×6 grid of 8px blocks (`cells`), with a notch carved into the
-bottom-center for the player to shelter under. Individual cells are destroyed
-("eroded") when hit by either a player or alien bullet.
+🏷️ "type 2", "10-point alien"
 
-**Code references.**
-- `src/gameLogic.js:6` — `makeBarriers()` builds the grids
-- `src/gameLogic.js:12` — "Notch the bottom-center for player to stand under"
-- `src/constants.js:23` — `BARRIER_COUNT = 4`; `src/constants.js:26` — `BARRIER_Y`
-- `src/gameLogic.js:66` — `collidesWithBarrier` erodes a hit cell
+↔️ A kind of [Alien](#alien); peers [Squid](#squid), [Crab](#crab)
 
-**Synonyms / aliases.** "bunker"/"shield" (-style defensive structure); the
-constant prefix `BARRIER_`.
+📍 `src/constants.js:28-30` · `src/SpaceInvaders.jsx:68` · `src/SpaceInvaders.jsx:524`
 
-**Related terms.** Eroded by [Player Bullet](#player-bullet) and
-[Alien Bullet](#alien-bullet); shelters [Player Ship](#player-ship).
+</details>
 
-### Crab
+<details>
+<summary><strong>Player Ship</strong> — the player-controlled defender</summary>
 
-**Definition.** The middle alien type (`type === 1`), occupying rows 1–2 of the
-formation. Worth 20 points; rendered in cyan (`#44d4ff`).
+📖 Fixed at vertical position `PLAYER_Y`, moving left/right (clamped to the canvas) at `PLAYER_SPEED`. Fires [Player Bullet](#player-bullet)s. Drawn from labeled parts: Body, Cockpit, Wings, Gun. Hit by an [Alien Bullet](#alien-bullet) it loses a [Life](#life).
 
-**Code references.**
-- `src/constants.js:28` — type taxonomy comment (`1=crab(mid)`)
-- `src/constants.js:29` — `ALIEN_SCORES[1] = 20`; `src/constants.js:30` — color `#44d4ff`
-- `src/SpaceInvaders.jsx:51` — "Crab" sprite drawing
-- `src/SpaceInvaders.jsx:523` — "= 20 pts" score legend
+🏷️ "player", "ship"; mini ship icons used for the [Lives](#life) HUD display
 
-**Synonyms / aliases.** "type 1", "20-point alien".
+↔️ Fires [Player Bullet](#player-bullet); shielded by [Barrier](#barrier); has [Life](#life)s; controlled by [Auto-play AI](#auto-play-ai); protected by [God Mode](#god-mode-iddqd)
 
-**Related terms.** A kind of [Alien](#alien); peers [Squid](#squid),
-[Octopus](#octopus).
+📍 `src/constants.js:6,8,9` · `src/SpaceInvaders.jsx:13,239` · `src/gameLogic.js:39`
 
-### Difficulty Tier
+</details>
 
-**Definition.** A label shown on the level-up transition describing the incoming
-wave's difficulty: `EASY`, `NORMAL`, `HARD`, or `INSANE`, derived from the
-[Level](#level) number. Higher tiers correspond to faster alien movement and
-more frequent alien fire.
+<details>
+<summary><strong>UFO (Mystery Ship)</strong> 🛸 — bonus saucer with a hidden point value</summary>
 
-**Code references.**
-- `src/SpaceInvaders.jsx:632` — `speedLabel` / difficulty-tier labels
-- `src/SpaceInvaders.jsx:629` — `LEVEL ${s.level + 1}` shown alongside
+📖 Flies across the top of the screen at random intervals (between `UFO_INTERVAL_MIN` and `UFO_INTERVAL_MAX`). Shooting it awards a randomly selected bonus from `[50, 100, 150, 200, 300]` points, shown as a floating score. While present it emits a warbling drone. The legend hides its value behind `?`.
 
-**Synonyms / aliases.** "speed label", "difficulty".
+🏷️ "UFO", "mystery ship", "bonus saucer"
 
-**Related terms.** State-of [Level](#level); displayed during the `levelup`
-[Game Phase](#game-phase).
+↔️ Destroyed by [Player Bullet](#player-bullet); awards [Score](#score) bonus
 
-### Explosion
+📍 `src/constants.js:33,36` · `src/SpaceInvaders.jsx:383,273,521` · `src/audio.js:104`
 
-**Definition.** A short-lived visual burst spawned where an alien, UFO, or the
-player is destroyed. Modeled as `{ x, y, timer }` with a ~30-frame life, ticked
-down each frame.
+</details>
 
-**Code references.**
-- `src/SpaceInvaders.jsx:124` — `drawExplosion`
-- `src/SpaceInvaders.jsx:265` — spawned on alien kill
-- `src/SpaceInvaders.jsx:469` — explosion timers ticked (`explosionsRef`)
+<details>
+<summary><strong>Barrier</strong> — erodible defensive bunker</summary>
 
-**Synonyms / aliases.** None observed.
+📖 Each of the four barriers is an 8×6 grid of 8px blocks (`cells`), with a notch carved into the bottom-center for the player to shelter under. Individual cells are destroyed ("eroded") when hit by either a player or alien bullet.
 
-**Related terms.** Triggered by destroying [Alien](#alien),
-[UFO](#ufo-mystery-ship), or [Player Ship](#player-ship).
+🏷️ "bunker", "shield"; constant prefix `BARRIER_`
 
-### Firework Particle
+↔️ Eroded by [Player Bullet](#player-bullet) and [Alien Bullet](#alien-bullet); shelters [Player Ship](#player-ship)
 
-**Definition.** A celebratory particle in the win-screen burst, with position,
-velocity, `life`, `decay`, `hue`, and `size`, affected by gravity. Spawned when
-the player clears all ten levels.
+📍 `src/gameLogic.js:6,12,66` · `src/constants.js:23,26`
 
-**Code references.**
-- `src/SpaceInvaders.jsx:432` — firework particle fields
-- `src/SpaceInvaders.jsx:446` — gravity applied
-- `src/SpaceInvaders.jsx:422` — win fireworks loop (`winParticlesRef`)
+</details>
 
-**Synonyms / aliases.** "win particle".
+<details>
+<summary><strong>Player Bullet</strong> — projectile fired upward by the player</summary>
 
-**Related terms.** Part of the `win` [Game Phase](#game-phase).
+📖 Travels at `BULLET_SPEED`. At most **two** may be in flight at once, gated by a 20-frame shoot cooldown. Erodes [Barrier](#barrier) cells, destroys an [Alien](#alien) (awarding points) or a [UFO](#ufo-mystery-ship) (awarding a bonus) on contact.
 
-### Game Phase
+🏷️ "shot"
 
-**Definition.** The game's lifecycle state, held in `phase`. The authoritative
-enumeration is: `start` (title screen), `playing` (active gameplay), `dead`
-(brief pause after losing a life before respawn), `levelup` (between-level
-transition), `gameover` (out of lives, or aliens reached the player line), and
-`win` (all ten levels cleared).
+↔️ Fired by [Player Ship](#player-ship); destroys [Alien](#alien) / [UFO](#ufo-mystery-ship); erodes [Barrier](#barrier)
 
-**Code references.**
-- `src/gameLogic.js:50` — `phase: 'start'` with enum comment
-- `src/SpaceInvaders.jsx:371` — set to `'dead'` on player hit
-- `src/SpaceInvaders.jsx:306` — set to `'levelup'`
-- `src/SpaceInvaders.jsx:302` — set to `'win'` when `level >= 10`
-- `src/SpaceInvaders.jsx:330` — set to `'gameover'` when aliens reach player
+📍 `src/constants.js:10` · `src/gameLogic.js:40` · `src/SpaceInvaders.jsx:245,251`
 
-**Synonyms / aliases.** "phase", "lifecycle state", "game state".
+</details>
 
-**Related terms.** `dead` transitions via [Respawn](#respawn); `gameover`/`win`
-return to `start` on restart (preserving [Hi-Score](#hi-score)).
+<details>
+<summary><strong>Alien Bullet</strong> — projectile fired downward by aliens</summary>
 
-### God Mode (IDDQD)
+📖 Fired by the alien at the bottom of each column. Travels at `ALIEN_BULLET_SPEED`, rendered with a zigzag shape. Erodes [Barrier](#barrier) cells and ends a [Life](#life) on contact — unless [God Mode](#god-mode-iddqd) or post-respawn flash invulnerability is active.
 
-**Definition.** An invincibility cheat toggled by typing `iddqd` during play.
-While active, alien bullets pass through the player and a golden aura is rendered
-around the ship; an "IDDQD" tag appears in the HUD. (Named after the classic
-DOOM cheat code — `(inferred)`.)
+🏷️ None observed
 
-**Code references.**
-- `src/SpaceInvaders.jsx:197` — `iddqd` keystroke buffer detection
-- `src/SpaceInvaders.jsx:360` — invulnerability check skips player damage
-- `src/SpaceInvaders.jsx:564` — golden aura rendering
-- `src/SpaceInvaders.jsx:587` — "IDDQD" HUD tag
+↔️ Fired by [Alien](#alien); damages [Barrier](#barrier) and [Player Ship](#player-ship); negated by [God Mode](#god-mode-iddqd)
 
-**Synonyms / aliases.** "IDDQD", `godModeRef`, "god mode".
+📍 `src/constants.js:13` · `src/gameLogic.js:41` · `src/SpaceInvaders.jsx:116,351,360`
 
-**Related terms.** Negates [Alien Bullet](#alien-bullet) damage to
-[Player Ship](#player-ship).
+</details>
 
-### Hi-Score
+<details>
+<summary><strong>Explosion</strong> — short-lived visual burst on destruction</summary>
 
-**Definition.** The highest [Score](#score) achieved within the session. It is
-updated when the current score exceeds it and is preserved across restarts
-(`reset(keepHiScore)`).
+📖 Modeled as `{ x, y, timer }` with a ~30-frame life, ticked down each frame. Spawned where an alien, UFO, or the player is destroyed.
 
-**Code references.**
-- `src/gameLogic.js:47` — `hiScore: 0` in game state
-- `src/SpaceInvaders.jsx:452` — hi-score updated; `src/SpaceInvaders.jsx:497` — "HI-SCORE" HUD label
-- `src/SpaceInvaders.jsx:164` — `reset(keepHiScore)` preserves it
+🏷️ None observed
 
-**Synonyms / aliases.** "HI-SCORE" (HUD label), `hiScore`.
+↔️ Triggered by destroying [Alien](#alien), [UFO](#ufo-mystery-ship), or [Player Ship](#player-ship)
 
-**Related terms.** Tracks the maximum [Score](#score).
+📍 `src/SpaceInvaders.jsx:124,265,469`
 
-### Level
+</details>
 
-**Definition.** The current wave number (starts at 1, capped at 10). Each level
-increases alien base speed and starting depth and shortens the alien shoot
-interval. Clearing level 10 triggers the `win` [Game Phase](#game-phase).
+<details>
+<summary><strong>Firework Particle</strong> 🎆 — celebratory burst on game completion</summary>
 
-**Code references.**
-- `src/gameLogic.js:49` — `level: 1`
-- `src/gameLogic.js:22` — per-level lower start-Y in `spawnAliens`
-- `src/SpaceInvaders.jsx:410` — level incremented on clear
-- `src/SpaceInvaders.jsx:504` — `${s.level}/10` HUD readout
-- `src/SpaceInvaders.jsx:301` — win when `level >= 10`
+📖 Appears on the win screen. Each particle has position, velocity, `life`, `decay`, `hue`, and `size`, affected by gravity. Spawned when the player clears all ten levels.
 
-**Synonyms / aliases.** "wave", "level".
+🏷️ "win particle"
 
-**Related terms.** Determines [Difficulty Tier](#difficulty-tier); paces
-[Alien Formation March](#alien-formation-march).
+↔️ Part of the `win` [Game Phase](#game-phase)
 
-### Life
+📍 `src/SpaceInvaders.jsx:422,432,446`
 
-**Definition.** A player respawn allowance. The game starts with 3; each player
-death decrements the count and, while lives remain, leads to a `dead`→respawn
-cycle. Reaching zero ends the game (`gameover`). Remaining lives are shown as
-mini ship icons.
-
-**Code references.**
-- `src/gameLogic.js:48` — `lives: 3`
-- `src/SpaceInvaders.jsx:363` — `s.lives--` on hit
-- `src/SpaceInvaders.jsx:367` — `gameover` when no lives left
-- `src/SpaceInvaders.jsx:506` — "LIVES" HUD + ship icons
-
-**Synonyms / aliases.** "LIVES" (HUD label), `lives`.
-
-**Related terms.** Lost via [Alien Bullet](#alien-bullet) hit; gates
-[Respawn](#respawn) vs [Game Over](#game-phase).
-
-### Octopus
-
-**Definition.** The bottom alien type (`type === 2`), occupying rows 3–4 of the
-formation. Worth 10 points; rendered in green (`#66ff66`).
-
-**Code references.**
-- `src/constants.js:28` — type taxonomy comment (`2=octopus(bottom)`)
-- `src/constants.js:29` — `ALIEN_SCORES[2] = 10`; `src/constants.js:30` — color `#66ff66`
-- `src/SpaceInvaders.jsx:68` — "Octopus" sprite drawing
-- `src/SpaceInvaders.jsx:524` — "= 10 pts" score legend
-
-**Synonyms / aliases.** "type 2", "10-point alien".
-
-**Related terms.** A kind of [Alien](#alien); peers [Squid](#squid),
-[Crab](#crab).
-
-### Player Bullet
-
-**Definition.** A projectile fired upward by the player ship, travelling at
-`BULLET_SPEED`. At most two may be in flight at once, gated by a 20-frame
-shoot cooldown. It erodes [Barrier](#barrier) cells, destroys an
-[Alien](#alien) (awarding points) or a [UFO](#ufo-mystery-ship) (awarding a
-bonus) on contact.
-
-**Code references.**
-- `src/constants.js:10` — `BULLET_SPEED = 10`
-- `src/gameLogic.js:40` — `playerBullets: []`
-- `src/SpaceInvaders.jsx:245` — max-2 cap and cooldown
-- `src/SpaceInvaders.jsx:251` — bullet travel & collisions
-
-**Synonyms / aliases.** "shot".
-
-**Related terms.** Fired by [Player Ship](#player-ship); destroys
-[Alien](#alien)/[UFO](#ufo-mystery-ship); erodes [Barrier](#barrier).
-
-### Player Ship
-
-**Definition.** The player-controlled defender, fixed at vertical position
-`PLAYER_Y`, moving left/right (clamped to the canvas) at `PLAYER_SPEED` and
-firing [Player Bullet](#player-bullet)s. Drawn from labeled parts (Body,
-Cockpit, Wings, Gun). Hit by an [Alien Bullet](#alien-bullet) it loses a
-[Life](#life).
-
-**Code references.**
-- `src/constants.js:6` — `PLAYER_W`; `src/constants.js:9` — `PLAYER_Y`; `src/constants.js:8` — `PLAYER_SPEED`
-- `src/SpaceInvaders.jsx:13` — `drawPlayer` (Body/Cockpit/Wings/Gun parts)
-- `src/SpaceInvaders.jsx:239` — movement clamping
-- `src/gameLogic.js:39` — `playerX` starting position
-
-**Synonyms / aliases.** "player", "ship" (and the mini "ship icons" used for
-lives).
-
-**Related terms.** Fires [Player Bullet](#player-bullet); shielded by
-[Barrier](#barrier); has [Life](#life)s; controllable by
-[Auto-play AI](#auto-play-ai); protected by [God Mode](#god-mode-iddqd).
-
-### Respawn
-
-**Definition.** The recovery after a player death (the `dead`
-[Game Phase](#game-phase)). After a death timer elapses, the player ship is
-re-centered and granted a temporary flash invulnerability window (`flashTimer`)
-during which alien bullets do not register a hit.
-
-**Code references.**
-- `src/SpaceInvaders.jsx:372` — death timer set to 120 on hit
-- `src/SpaceInvaders.jsx:399` — respawn handling in `dead` phase
-- `src/SpaceInvaders.jsx:404` — `flashTimer` invulnerability set
-- `src/gameLogic.js:62` — `flashTimer: 0` in state
-
-**Synonyms / aliases.** "flash invulnerability", `deadTimer`/`flashTimer`.
-
-**Related terms.** Follows loss of a [Life](#life); state-of the `dead`
-[Game Phase](#game-phase).
-
-### Score
-
-**Definition.** The player's accumulated points. Increases by the alien's point
-value on each kill (`ALIEN_SCORES[type]`) and by a random UFO bonus when the
-mystery ship is destroyed. Shown in the HUD as "SCORE".
-
-**Code references.**
-- `src/gameLogic.js:46` — `score: 0`
-- `src/SpaceInvaders.jsx:264` — `s.score += ALIEN_SCORES[alien.type]`
-- `src/SpaceInvaders.jsx:273` — UFO bonus added
-- `src/SpaceInvaders.jsx:493` — "SCORE" HUD label
-
-**Synonyms / aliases.** "SCORE", `score`.
-
-**Related terms.** Awarded by destroying [Alien](#alien) and
-[UFO](#ufo-mystery-ship); tracked at peak by [Hi-Score](#hi-score).
-
-### Space Music
-
-**Definition.** The procedurally synthesized ambient soundtrack (no audio
-files). It layers a deep detuned bass drone with a slow tremolo, an A-minor
-chord pad, a high-frequency shimmer, and a melodic pentatonic arpeggio fed
-through a delay/echo. It fades in when the game starts and fades out on game
-over / win, and is silenced only by the master [Mute](#mute) (not the SFX-only
-mute).
-
-**Code references.**
-- `src/audio.js:169` — `startMusic`; `src/audio.js:273` — `stopMusic`
-- `src/audio.js:192` — bass drone; `src/audio.js:214` — Am chord pad
-- `src/audio.js:248` — arpeggio; `src/audio.js:16` — `ARP_NOTES`
-- `src/SpaceInvaders.jsx:234` — music started when play begins
-
-**Synonyms / aliases.** "ambient space music", "music"; components: "bass
-drone", "ambient pad", "shimmer", "arpeggio".
-
-**Related terms.** Governed by master [Mute](#mute) but independent of SFX mute.
-
-### Squid
-
-**Definition.** The top alien type (`type === 0`), occupying row 0 of the
-formation. Worth 30 points (the highest per-alien value, prioritised by the
-[Auto-play AI](#auto-play-ai)); rendered in pink (`#ff4edd`).
-
-**Code references.**
-- `src/constants.js:28` — type taxonomy comment (`0=squid(top)`)
-- `src/constants.js:29` — `ALIEN_SCORES[0] = 30`; `src/constants.js:30` — color `#ff4edd`
-- `src/SpaceInvaders.jsx:36` — "Squid" sprite drawing
-- `src/gameLogic.js:108` — AI prioritises squids ("squid=30pts")
-
-**Synonyms / aliases.** "type 0", "30-point alien".
-
-**Related terms.** A kind of [Alien](#alien); peers [Crab](#crab),
-[Octopus](#octopus).
-
-### UFO (Mystery Ship)
-
-**Definition.** A bonus saucer that flies across the top of the screen
-(`UFO_Y`) at random intervals (between `UFO_INTERVAL_MIN` and
-`UFO_INTERVAL_MAX`). Shooting it awards a randomly selected bonus from
-`[50, 100, 150, 200, 300]` points, shown as a floating score; while present it
-emits a warbling drone. The legend hides its value behind a "?".
-
-**Code references.**
-- `src/constants.js:33` — `UFO_Y`; `src/constants.js:36` — `UFO_INTERVAL_MIN`/`MAX`
-- `src/SpaceInvaders.jsx:383` — UFO spawn (`{ x, dir }`)
-- `src/SpaceInvaders.jsx:273` — random bonus `[50,100,150,200,300]`
-- `src/audio.js:104` — `startUFO` warble drone
-- `src/SpaceInvaders.jsx:521` — "= ? pts" legend
-
-**Synonyms / aliases.** "UFO", "mystery ship", "bonus saucer".
-
-**Related terms.** Destroyed by [Player Bullet](#player-bullet); awards
-[Score](#score) bonus.
-
-### Mute
-
-**Definition.** Audio silencing, in two distinct forms. The **master mute**
-(mute button) silences everything — [Space Music](#space-music), SFX, and the
-UFO drone. The **SFX-only mute** (toggled with the `S` key, shown as "SFX OFF")
-silences sound effects while leaving music playing.
-
-**Code references.**
-- `src/audio.js:298` — `setMuted`/`isMuted` (master mute)
-- `src/audio.js:317` — `setSfxMuted`/`isSfxMuted` (SFX-only)
-- `src/SpaceInvaders.jsx:157` — `toggleMute`
-- `src/SpaceInvaders.jsx:188` — `KeyS` toggles SFX mute; `src/SpaceInvaders.jsx:594` — "SFX OFF" tag
-
-**Synonyms / aliases.** "master mute", "SFX mute", "SFX OFF".
-
-**Related terms.** Controls [Space Music](#space-music) and sound effects.
+</details>
 
 ---
 
-## Open questions / ambiguities
+## Mechanics
 
-Terms or concepts that could not be confidently defined from code and need
-human confirmation:
+<details>
+<summary><strong>Alien Formation March</strong> — the collective movement of the alien grid</summary>
 
-- **`BARRIER_W` / `BARRIER_H`** (`src/constants.js:24`, `src/constants.js:25`) —
-  declared but never imported or used; actual barrier geometry comes from the
-  `cols`/`rows`/`bw` grid in `makeBarriers` (`src/gameLogic.js:10`). Likely
-  dead/legacy config — confirm whether intended.
-- **`alienMoveAccum`** (`src/gameLogic.js:45`) — initialized in the game state
-  but never read; the live pacing timer appears to be `alienFrameTimer`
-  (`src/gameLogic.js:60`). Likely vestigial.
-- **UFO bonus values** — the set `[50, 100, 150, 200, 300]`
-  (`src/SpaceInvaders.jsx:273`) is an inline literal rather than a named
-  constant, and the HUD legend intentionally hides it behind "?"
-  (`src/SpaceInvaders.jsx:521`). Confirm whether the hidden/randomized value is
-  the intended player-facing rule.
+📖 The formation moves in `alienDir` (1 = right, −1 = left), reverses direction and descends `ALIEN_DROP` pixels on reaching a screen edge. Its step interval shortens as the [Level](#level) rises and as more aliens are killed — the classic accelerating march. Each march step plays a 4-note beat.
+
+🏷️ "march", "alien movement"
+
+↔️ Composed of [Alien](#alien)s; drives toward [Game Over](#game-phase) when the lowest alien reaches the player line; paced by [Level](#level)
+
+📍 `src/gameLogic.js:44` · `src/constants.js:20` · `src/SpaceInvaders.jsx:287,316` · `src/audio.js:8,97`
+
+</details>
+
+<details>
+<summary><strong>Level</strong> — the current wave number (1–10)</summary>
+
+📖 Each level increases alien base speed and starting depth, and shortens the alien shoot interval. Clearing level 10 triggers the `win` [Game Phase](#game-phase).
+
+🏷️ "wave", "level"
+
+↔️ Determines [Difficulty Tier](#difficulty-tier); paces [Alien Formation March](#alien-formation-march)
+
+📍 `src/gameLogic.js:22,49` · `src/SpaceInvaders.jsx:301,410,504`
+
+</details>
+
+<details>
+<summary><strong>Difficulty Tier</strong> — wave difficulty label shown on level-up</summary>
+
+📖 One of `EASY`, `NORMAL`, `HARD`, or `INSANE`, derived from the [Level](#level) number. Higher tiers correspond to faster alien movement and more frequent alien fire.
+
+🏷️ "speed label", "difficulty"
+
+↔️ State-of [Level](#level); displayed during the `levelup` [Game Phase](#game-phase)
+
+📍 `src/SpaceInvaders.jsx:629,632`
+
+</details>
+
+<details>
+<summary><strong>Life</strong> — a player respawn allowance</summary>
+
+📖 The game starts with **3 lives**. Each player death decrements the count and, while lives remain, leads to a `dead` → respawn cycle. Reaching zero ends the game (`gameover`). Remaining lives are shown as mini ship icons in the HUD.
+
+🏷️ "LIVES" (HUD label), `lives`
+
+↔️ Lost via [Alien Bullet](#alien-bullet) hit; gates [Respawn](#respawn) vs [Game Over](#game-phase)
+
+📍 `src/gameLogic.js:48` · `src/SpaceInvaders.jsx:363,367,506`
+
+</details>
+
+<details>
+<summary><strong>Respawn</strong> — recovery after a player death</summary>
+
+📖 After the death timer elapses, the player ship is re-centered and granted a temporary **flash invulnerability** window (`flashTimer`) during which alien bullets do not register a hit.
+
+🏷️ "flash invulnerability", `deadTimer` / `flashTimer`
+
+↔️ Follows loss of a [Life](#life); state-of the `dead` [Game Phase](#game-phase)
+
+📍 `src/SpaceInvaders.jsx:372,399,404` · `src/gameLogic.js:62`
+
+</details>
+
+<details>
+<summary><strong>Score</strong> — the player's accumulated points</summary>
+
+📖 Increases by the alien's point value on each kill (`ALIEN_SCORES[type]`) and by a random UFO bonus when the mystery ship is destroyed. Shown in the HUD as "SCORE".
+
+🏷️ "SCORE", `score`
+
+↔️ Awarded by destroying [Alien](#alien) and [UFO](#ufo-mystery-ship); tracked at peak by [Hi-Score](#hi-score)
+
+📍 `src/gameLogic.js:46` · `src/SpaceInvaders.jsx:264,273,493`
+
+</details>
+
+<details>
+<summary><strong>Hi-Score</strong> — the session-best score</summary>
+
+📖 Updated when the current score exceeds it. Preserved across restarts via `reset(keepHiScore)`.
+
+🏷️ "HI-SCORE" (HUD label), `hiScore`
+
+↔️ Tracks the maximum [Score](#score)
+
+📍 `src/gameLogic.js:47` · `src/SpaceInvaders.jsx:164,452,497`
+
+</details>
+
+<details>
+<summary><strong>God Mode (IDDQD)</strong> — invincibility cheat &nbsp;<kbd>I</kbd><kbd>D</kbd><kbd>D</kbd><kbd>Q</kbd><kbd>D</kbd></summary>
+
+📖 Toggled by typing <kbd>IDDQD</kbd> during play. While active, alien bullets pass through the player and a **golden aura** is rendered around the ship; an "IDDQD" tag appears in the HUD. Named after the classic DOOM cheat code `(inferred)`.
+
+🏷️ "IDDQD", `godModeRef`, "god mode"
+
+↔️ Negates [Alien Bullet](#alien-bullet) damage to [Player Ship](#player-ship)
+
+📍 `src/SpaceInvaders.jsx:197,360,564,587`
+
+</details>
+
+<details>
+<summary><strong>Auto-play AI</strong> — AI screensaver mode &nbsp;<kbd>A</kbd></summary>
+
+📖 Toggled with <kbd>A</kbd>. Generates synthetic player inputs each frame: dodges incoming alien bullets by evading toward the open side, targets the lowest-row alien (preferring high-value [Squid](#squid)s), and shoots when horizontally aligned. Also auto-starts and auto-restarts — functions as a screensaver.
+
+🏷️ "AUTO" (HUD tag), `autoPlayRef`, `computeAutoInputs`
+
+↔️ Controls the [Player Ship](#player-ship); targets [Alien](#alien)s
+
+📍 `src/gameLogic.js:86,90,104` · `src/SpaceInvaders.jsx:183,580`
+
+</details>
+
+---
+
+## UI / Audio
+
+<details>
+<summary><strong>Game Phase</strong> — the game's lifecycle state</summary>
+
+📖 Held in `phase`. The authoritative enumeration:
+
+| Phase | Description |
+|-------|-------------|
+| `start` | Title screen |
+| `playing` | Active gameplay |
+| `dead` | Brief pause after losing a life, before respawn |
+| `levelup` | Between-level transition |
+| `gameover` | Out of lives, or aliens reached the player line |
+| `win` | All ten levels cleared |
+
+🏷️ "phase", "lifecycle state", "game state"
+
+↔️ `dead` transitions via [Respawn](#respawn); `gameover` / `win` return to `start` on restart (preserving [Hi-Score](#hi-score))
+
+📍 `src/gameLogic.js:50` · `src/SpaceInvaders.jsx:302,306,330,371`
+
+</details>
+
+<details>
+<summary><strong>Space Music</strong> 🎵 — procedurally synthesised ambient soundtrack</summary>
+
+📖 No audio files — all synthesised via the Web Audio API. Layers a deep detuned bass drone with slow tremolo, an A-minor chord pad, a high-frequency shimmer, and a melodic pentatonic arpeggio through a delay/echo. Fades in when the game starts and fades out on game over / win. Silenced only by the master [Mute](#mute), not the SFX-only mute.
+
+🏷️ "ambient space music", "music"; components: "bass drone", "ambient pad", "shimmer", "arpeggio"
+
+↔️ Governed by master [Mute](#mute) but independent of SFX mute
+
+📍 `src/audio.js:16,169,192,214,248,273` · `src/SpaceInvaders.jsx:234`
+
+</details>
+
+<details>
+<summary><strong>Mute</strong> 🔇 — audio silencing, two independent controls</summary>
+
+📖 Two distinct forms:
+
+| Control | How | Scope |
+|---------|-----|-------|
+| **Master mute** | Mute button | Silences everything: music, SFX, UFO drone |
+| **SFX-only mute** | <kbd>S</kbd> — shown as "SFX OFF" | Silences SFX only; music keeps playing |
+
+🏷️ "master mute", "SFX mute", "SFX OFF"
+
+↔️ Controls [Space Music](#space-music) and sound effects
+
+📍 `src/audio.js:298,317` · `src/SpaceInvaders.jsx:157,188,594`
+
+</details>
+
+---
+
+## Open questions
+
+> Concepts not fully provable from code — need human confirmation.
+
+- **`BARRIER_W` / `BARRIER_H`** (`src/constants.js:24,25`) — declared but never imported or used; actual barrier geometry comes from the `cols`/`rows`/`bw` grid in `makeBarriers` (`src/gameLogic.js:10`). Likely dead/legacy config.
+- **`alienMoveAccum`** (`src/gameLogic.js:45`) — initialised in game state but never read; live pacing timer appears to be `alienFrameTimer` (`src/gameLogic.js:60`). Likely vestigial.
+- **UFO bonus values** — the set `[50, 100, 150, 200, 300]` (`src/SpaceInvaders.jsx:273`) is an inline literal; the HUD legend intentionally hides it behind `?`. Confirm whether the hidden/randomised value is the intended player-facing rule.
