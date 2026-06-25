@@ -4,11 +4,14 @@ Render the generated glossary to the agreed output path (default
 `UBIQUITOUS_LANGUAGE.md` at the repo root) using the structure below.
 
 - Replace every `<...>` placeholder.
-- Group `###` term entries under their `##` bounded context, **alphabetically**.
-- Order bounded contexts alphabetically, except a single-context project may use
-  the project name.
-- Omit an optional field (Synonyms / Related) only when there is genuinely
-  nothing to list; otherwise include it.
+- Group term cards under `##` **category** sections (3–5 groups that reflect the
+  domain structure / bounded contexts). Order categories logically; order term
+  cards within a category **alphabetically**.
+- Each term is a `<details>` collapsible card — **do not use `###` headings** for
+  terms.
+- Use the marker legend (📖 🏷️ ↔️ 📍) instead of verbose bold labels.
+- Omit an optional marker line (🏷️ synonyms / ↔️ related) only when there is
+  genuinely nothing to list; otherwise include it.
 
 ---
 
@@ -19,47 +22,63 @@ Render the generated glossary to the agreed output path (default
 > references. Definitions describe observed behavior; clauses marked
 > `(inferred)` are plausible but not fully provable from code.
 
-- **Source:** `<repo path or URL>`
-- **Generated:** <YYYY-MM-DD>
-- **Scope:** <whole repo | listed directories/services>
-- **Bounded contexts covered:** <Context A>, <Context B>, ...
+| | |
+| --- | --- |
+| **Source** | `<repo path or URL>` |
+| **Generated** | <YYYY-MM-DD> |
+| **Scope** | <whole repo \| listed directories/services> |
+| **Bounded contexts** | <Context A>, <Context B>, ... |
 
 ## How to read this
 
-- **Definition** — what the concept means, based on code.
-- **Code references** — where the term is defined and used (`file:line`).
-- **Synonyms / aliases** — other names for the same concept in the codebase.
-- **Related terms** — linked domain concepts (contains, references, state-of).
-- `(inferred)` — interpretation not fully provable from code; confirm with a
-  domain expert.
+| Marker | Meaning |
+| --- | --- |
+| 📖 | **Definition** — what the concept means, based on code. |
+| 🏷️ | **Synonyms / aliases** — other names for the same concept. |
+| ↔️ | **Related terms** — linked concepts (contains, references, state-of). |
+| 📍 | **Code references** — where the term is defined and used (`file:line`). |
+
+`(inferred)` marks an interpretation not fully provable from code; confirm with
+a domain expert.
 
 ---
 
-## <Bounded Context Name>
+## <Category / Bounded Context Name>
 
-<One sentence describing what this context is responsible for.>
+<One sentence describing what this category is responsible for.>
 
-### <Term>
+<details>
+<summary><b><Term></b></summary>
 
-**Definition.** <1–3 sentences describing what the term means based on the
-code.>
+📖 <1–3 sentences describing what the term means based on the code.>
 
-**Code references.**
-- `<path/to/file.ext>:<line>` — <definition site>
-- `<path/to/file.ext>:<line>` — <representative usage>
+🏷️ <comma-separated alternates, or "None observed.">
 
-**Synonyms / aliases.** <comma-separated alternates, or "None observed.">
+↔️ contains [<Child Term>](#child-term) · references [<Other Term>](#other-term) · state-of [<Parent Term>](#parent-term)
 
-**Related terms.** <[Other Term](#other-term)>, contains
-<[Child Term](#child-term)>, state-of <[Parent Term](#parent-term)>.
+📍 `<path/to/file.ext>:<line>` (definition) · `<path/to/file.ext>:<line>` (usage)
 
-### <Next Term>
+<!-- Optional: inline table for an enumerable value set (states, sub-types, control variants) -->
+| Value | Meaning |
+| --- | --- |
+| `<VALUE_A>` | <meaning> |
+| `<VALUE_B>` | <meaning> |
+
+<!-- Optional: keyboard shortcuts / cheat codes rendered with <kbd> -->
+<kbd><Key></kbd> — <action>
+
+</details>
+
+<details>
+<summary><b><Next Term></b></summary>
 
 ...
 
+</details>
+
 ---
 
-## <Next Bounded Context Name>
+## <Next Category Name>
 
 ...
 
@@ -78,9 +97,20 @@ human confirmation:
 
 ## Rendering notes
 
-- Anchors: Markdown auto-anchors `### Term` as `#term` (lowercase, spaces →
-  hyphens). Cross-link with `[Term](#term)`.
-- Keep one blank line between entries.
-- Do not embed code blocks inside definitions — use `file:line` references.
+- **Cards, not headings.** Each term is a `<details><summary>` block; the term
+  name goes in `<summary>` (bold). This keeps long glossaries collapsible.
+- **Anchors.** Since terms are not `###` headings, create cross-link targets by
+  matching the term's lowercased, hyphenated name (e.g. `[Work Center](#work-center)`).
+  If your renderer does not auto-anchor `<summary>`, add an explicit
+  `<a id="work-center"></a>` inside the card.
+- **Markers on their own lines.** Put each of 📖 / 🏷️ / ↔️ / 📍 on its own line.
+- **References line.** Put all 📍 references on a single line, separated by ` · `
+  (dot), each as `` `file:line` `` with a short parenthetical role.
+- **Related-terms line.** Separate relationships with ` · `; prefix each with the
+  relationship verb (contains, references, state-of, part-of, synonym-of).
+- **Enumerable value sets.** Render states, sub-types, or control variants as an
+  inline table inside the card rather than prose.
+- **Keyboard shortcuts / cheat codes.** Wrap keys in `<kbd>...</kbd>`.
+- Do not embed code snippets inside definitions — use `file:line` references.
 - If there are no open questions, keep the heading and write
   "None — all terms are grounded in code."
